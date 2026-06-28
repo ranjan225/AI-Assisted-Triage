@@ -1,0 +1,261 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Sentriage — On-prem AI triage for vulnerability reports</title>
+<meta name="description" content="Sentriage scores every incoming vulnerability report for quality, duplication, and AI-generated noise — entirely on your own infrastructure. A data-sovereign alternative to cloud triage.">
+<style>
+  :root{
+    --bg:#0a0d14; --bg2:#0f1421; --panel:#141a28; --line:#212a3d;
+    --ink:#e8edf6; --muted:#94a0b8; --accent:#4f9dde; --accent2:#5ee0b0;
+    --good:#5ee0b0; --warn:#e0b54f; --radius:14px; --max:1120px;
+  }
+  *{box-sizing:border-box;margin:0;padding:0}
+  html{scroll-behavior:smooth}
+  body{background:var(--bg);color:var(--ink);font:16px/1.6 -apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+  a{color:inherit;text-decoration:none}
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px}
+  .muted{color:var(--muted)}
+  .accent{color:var(--accent)}
+
+  /* nav */
+  header{position:sticky;top:0;z-index:50;background:rgba(10,13,20,.8);backdrop-filter:blur(10px);border-bottom:1px solid var(--line)}
+  nav{display:flex;align-items:center;justify-content:space-between;height:64px}
+  .logo{display:flex;align-items:center;gap:10px;font-weight:700;font-size:18px;letter-spacing:-.02em}
+  .logo .dot{width:11px;height:11px;border-radius:50%;background:linear-gradient(135deg,var(--accent),var(--accent2));box-shadow:0 0 14px var(--accent)}
+  .navlinks{display:flex;gap:28px;align-items:center}
+  .navlinks a{color:var(--muted);font-size:14.5px}
+  .navlinks a:hover{color:var(--ink)}
+  .btn{display:inline-block;background:linear-gradient(135deg,var(--accent),#3f86c4);color:#04121e;font-weight:700;padding:11px 18px;border-radius:10px;font-size:14.5px;border:0;cursor:pointer;transition:transform .12s}
+  .btn:hover{transform:translateY(-1px)}
+  .btn.ghost{background:transparent;color:var(--ink);border:1px solid var(--line)}
+  .menu-toggle{display:none;background:none;border:0;color:var(--ink);font-size:24px;cursor:pointer}
+
+  /* hero */
+  .hero{padding:88px 0 64px;background:radial-gradient(1100px 500px at 70% -10%,rgba(79,157,222,.13),transparent),radial-gradient(800px 400px at 10% 10%,rgba(94,224,176,.07),transparent)}
+  .hero-grid{display:grid;grid-template-columns:1.05fr .95fr;gap:54px;align-items:center}
+  .eyebrow{display:inline-flex;align-items:center;gap:8px;font-size:13px;color:var(--accent2);background:rgba(94,224,176,.08);border:1px solid rgba(94,224,176,.2);padding:6px 12px;border-radius:999px;margin-bottom:22px}
+  h1{font-size:48px;line-height:1.08;letter-spacing:-.025em;font-weight:800;margin-bottom:20px}
+  h1 .grad{background:linear-gradient(120deg,var(--accent),var(--accent2));-webkit-background-clip:text;background-clip:text;color:transparent}
+  .sub{font-size:18.5px;color:var(--muted);max-width:540px;margin-bottom:30px}
+  .cta-row{display:flex;gap:14px;flex-wrap:wrap}
+  .trust{display:flex;gap:22px;margin-top:30px;flex-wrap:wrap;color:var(--muted);font-size:13.5px}
+  .trust span{display:flex;align-items:center;gap:7px}
+  .trust .tick{color:var(--good)}
+
+  /* scorecard mock */
+  .card-mock{background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:18px;padding:22px;box-shadow:0 30px 80px -30px rgba(0,0,0,.7)}
+  .card-mock .head{display:flex;justify-content:space-between;align-items:center;padding-bottom:14px;border-bottom:1px solid var(--line);margin-bottom:16px}
+  .card-mock .head .t{font-weight:600;font-size:14px}
+  .card-mock .head .badge{font-size:11px;color:var(--good);border:1px solid rgba(94,224,176,.3);border-radius:6px;padding:3px 8px}
+  .rowm{display:flex;justify-content:space-between;align-items:center;padding:9px 0;font-size:14px}
+  .rowm .k{color:var(--muted)}
+  .rowm .v{font-weight:600}
+  .bar{height:7px;background:#1c2536;border-radius:6px;overflow:hidden;width:120px}
+  .bar > i{display:block;height:100%;background:linear-gradient(90deg,var(--accent),var(--accent2))}
+  .pill{font-size:12px;padding:3px 9px;border-radius:999px;border:1px solid var(--line)}
+  .pill.low{color:var(--good);border-color:rgba(94,224,176,.3)}
+  .pill.med{color:var(--warn);border-color:rgba(224,181,79,.3)}
+  .reco{margin-top:14px;padding:12px;background:rgba(79,157,222,.06);border:1px solid rgba(79,157,222,.16);border-radius:10px;font-size:12.5px;color:var(--muted)}
+
+  /* sections */
+  section{padding:74px 0;border-top:1px solid var(--line)}
+  .center{text-align:center;max-width:680px;margin:0 auto 46px}
+  h2{font-size:32px;letter-spacing:-.02em;font-weight:800;margin-bottom:14px}
+  .kicker{color:var(--accent);font-size:13px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;margin-bottom:12px}
+  .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:20px}
+  .grid4{display:grid;grid-template-columns:repeat(4,1fr);gap:18px}
+  .feat{background:var(--panel);border:1px solid var(--line);border-radius:var(--radius);padding:24px;transition:border-color .15s,transform .15s}
+  .feat:hover{border-color:#33415e;transform:translateY(-3px)}
+  .feat .ic{width:42px;height:42px;border-radius:11px;display:flex;align-items:center;justify-content:center;font-size:20px;background:rgba(79,157,222,.1);border:1px solid rgba(79,157,222,.2);margin-bottom:15px}
+  .feat h3{font-size:17.5px;margin-bottom:8px}
+  .feat p{color:var(--muted);font-size:14.5px}
+
+  /* steps */
+  .steps{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;counter-reset:s}
+  .step{position:relative;padding:26px 22px;background:linear-gradient(180deg,var(--panel),var(--bg2));border:1px solid var(--line);border-radius:var(--radius)}
+  .step::before{counter-increment:s;content:counter(s);position:absolute;top:-16px;left:22px;width:34px;height:34px;border-radius:9px;background:linear-gradient(135deg,var(--accent),var(--accent2));color:#04121e;font-weight:800;display:flex;align-items:center;justify-content:center}
+  .step h3{margin:12px 0 8px;font-size:17px}
+  .step p{color:var(--muted);font-size:14.5px}
+
+  /* audience */
+  .aud{display:flex;flex-wrap:wrap;gap:12px;justify-content:center}
+  .aud span{border:1px solid var(--line);border-radius:999px;padding:9px 16px;color:var(--muted);font-size:14px}
+
+  /* cta band */
+  .band{background:linear-gradient(135deg,rgba(79,157,222,.12),rgba(94,224,176,.06));border:1px solid var(--line);border-radius:20px;padding:48px;text-align:center}
+  .band h2{font-size:30px}
+  .band p{color:var(--muted);max-width:520px;margin:0 auto 26px}
+
+  footer{border-top:1px solid var(--line);padding:40px 0;color:var(--muted);font-size:14px}
+  .foot{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:16px}
+
+  @media(max-width:880px){
+    .hero-grid{grid-template-columns:1fr;gap:38px}
+    .grid3,.grid4,.steps{grid-template-columns:1fr}
+    h1{font-size:36px}
+    .navlinks{display:none}
+    .menu-toggle{display:block}
+    .navlinks.open{display:flex;position:absolute;top:64px;left:0;right:0;flex-direction:column;background:var(--bg2);border-bottom:1px solid var(--line);padding:18px 24px;gap:16px}
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <div class="wrap">
+    <nav>
+      <div class="logo"><span class="dot"></span> Sentriage</div>
+      <div class="navlinks" id="nav">
+        <a href="#problem">Problem</a>
+        <a href="#how">How it works</a>
+        <a href="#why">Why on-prem</a>
+        <a href="#who">Who it's for</a>
+        <a href="#demo">Demo</a>
+        <a class="btn" href="mailto:ranjan12574@gmail.com?subject=Sentriage%20live%20demo%20request">Request a demo</a>
+      </div>
+      <button class="menu-toggle" onclick="document.getElementById('nav').classList.toggle('open')">☰</button>
+    </nav>
+  </div>
+</header>
+
+<!-- HERO -->
+<div class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <span class="eyebrow">● Self-hosted · your data never leaves</span>
+      <h1>Triage every vulnerability report <span class="grad">in seconds</span> — on your own infrastructure.</h1>
+      <p class="sub">Your security team is buried under low-quality, duplicate, and AI-generated reports. Sentriage scores every incoming report the moment it arrives — so analysts see the real ones first, and the noise last.</p>
+      <div class="cta-row">
+        <a class="btn" href="mailto:ranjan12574@gmail.com?subject=Sentriage%20pilot%20request">Request a pilot</a>
+        <a class="btn ghost" href="#how">See how it works</a>
+      </div>
+      <div class="trust">
+        <span><span class="tick">✓</span> Runs entirely on-prem</span>
+        <span><span class="tick">✓</span> No report ever leaves your environment</span>
+        <span><span class="tick">✓</span> Auditable under NDA</span>
+      </div>
+    </div>
+
+    <!-- scorecard mockup (illustrative output only) -->
+    <div class="card-mock" aria-hidden="true">
+      <div class="head"><span class="t">Incoming report · triage scorecard</span><span class="badge">on-prem</span></div>
+      <div class="rowm"><span class="k">Report quality</span><span class="v" style="display:flex;align-items:center;gap:10px">88<span class="bar"><i style="width:88%"></i></span></span></div>
+      <div class="rowm"><span class="k">Duplicate risk</span><span class="pill low">Low</span></div>
+      <div class="rowm"><span class="k">AI-assistance</span><span class="v">20%</span></div>
+      <div class="rowm"><span class="k">Evidence</span><span class="pill low">High</span></div>
+      <div class="rowm"><span class="k">Severity</span><span class="pill med">High</span></div>
+      <div class="rowm"><span class="k">Suggested CWE</span><span class="v accent">CWE-918</span></div>
+      <div class="reco">Recommendation: concrete endpoint, payload and PoC; a triager can verify quickly. Surfaced as a real submission, not noise.</div>
+    </div>
+  </div>
+</div>
+
+<!-- PROBLEM -->
+<section id="problem">
+  <div class="wrap">
+    <div class="center">
+      <div class="kicker">The problem</div>
+      <h2>Triage doesn't scale — and the noise is getting worse.</h2>
+      <p class="muted">Disclosure programs receive more reports than analysts can keep up with, and a growing share is automated low-quality submissions.</p>
+    </div>
+    <div class="grid3">
+      <div class="feat"><div class="ic">🌊</div><h3>The AI-slop flood</h3><p>A rising tide of machine-generated, plausible-but-empty reports buries the genuine findings and wastes senior analyst time.</p></div>
+      <div class="feat"><div class="ic">⏳</div><h3>Slow, inconsistent triage</h3><p>First-pass review is manual, repetitive, and varies analyst to analyst. The real issues wait in the queue behind the noise.</p></div>
+      <div class="feat"><div class="ic">🔒</div><h3>Cloud triage is off the table</h3><p>Regulated and security-sensitive teams can't send vulnerability reports to a third-party SaaS — so they get no AI help at all.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- HOW -->
+<section id="how">
+  <div class="wrap">
+    <div class="center">
+      <div class="kicker">How it works</div>
+      <h2>Signal first, on your infrastructure.</h2>
+      <p class="muted">Sentriage sits in front of your triage queue and gives every report a clear, explained scorecard — your team stays in control of every decision.</p>
+    </div>
+    <div class="steps">
+      <div class="step"><h3>A report arrives</h3><p>Connects to how reports already reach you. Everything runs inside your environment — nothing is sent out.</p></div>
+      <div class="step"><h3>It's scored in seconds</h3><p>Each report gets a triage scorecard — quality, duplicate risk, AI-likelihood, severity and more — with a short rationale for each call.</p></div>
+      <div class="step"><h3>Analysts act on the signal</h3><p>The noise is flagged, the real findings rise to the top, and your team makes the final call faster and more consistently.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHY -->
+<section id="why">
+  <div class="wrap">
+    <div class="center">
+      <div class="kicker">Why on-prem</div>
+      <h2>Built for teams that can't use the cloud.</h2>
+    </div>
+    <div class="grid4">
+      <div class="feat"><div class="ic">🏠</div><h3>Data sovereignty</h3><p>Runs 100% on your infrastructure. Vulnerability reports never leave your environment — by design, not by policy.</p></div>
+      <div class="feat"><div class="ic">⚙️</div><h3>Your model, your hardware</h3><p>Bring your own model. No external calls required, no per-report cloud cost, no vendor lock-in.</p></div>
+      <div class="feat"><div class="ic">🤝</div><h3>Recommend, don't decide</h3><p>Every score comes with a reason, and a human makes the final call. An assistant for your analysts — not a replacement.</p></div>
+      <div class="feat"><div class="ic">🔎</div><h3>Auditable under NDA</h3><p>Licensed customers' security teams can review exactly what runs in their environment — trust without the code being public.</p></div>
+    </div>
+  </div>
+</section>
+
+<!-- WHO -->
+<section id="who">
+  <div class="wrap">
+    <div class="center">
+      <div class="kicker">Who it's for</div>
+      <h2>For programs that take their data seriously.</h2>
+    </div>
+    <div class="aud">
+      <span>Government &amp; defense</span>
+      <span>Financial services</span>
+      <span>Healthcare</span>
+      <span>Critical infrastructure</span>
+      <span>Enterprise security teams</span>
+      <span>In-house disclosure programs</span>
+      <span>MSSPs &amp; triage providers</span>
+      <span>Open-source foundations</span>
+    </div>
+  </div>
+</section>
+
+<!-- DEMO -->
+<section id="demo">
+  <div class="wrap">
+    <div class="center">
+      <div class="kicker">See it in action</div>
+      <h2>Watch it score a report — live.</h2>
+      <p class="muted">Paste in a real submission and get a full triage scorecard — quality, duplicate risk, AI-likelihood, severity, suggested CWE — each with the reasoning behind it, in seconds. Walked through on a live call, running on-prem.</p>
+    </div>
+    <div style="display:flex;justify-content:center">
+      <a class="btn" href="mailto:ranjan12574@gmail.com?subject=Sentriage%20live%20demo%20request">Request a live demo</a>
+    </div>
+  </div>
+</section>
+
+<!-- CTA -->
+<section>
+  <div class="wrap">
+    <div class="band">
+      <h2>See it run on your own reports.</h2>
+      <p>After the demo, start with a scoped pilot — deployed in your environment, measured on your data. No reports leave your box.</p>
+      <a class="btn" href="mailto:ranjan12574@gmail.com?subject=Sentriage%20pilot%20request">Request a pilot</a>
+    </div>
+  </div>
+</section>
+
+<footer>
+  <div class="wrap foot">
+    <div class="logo"><span class="dot"></span> Sentriage</div>
+    <div class="muted">On-prem AI triage for vulnerability reports · <a class="accent" href="mailto:ranjan12574@gmail.com">ranjan12574@gmail.com</a></div>
+    <div class="muted">© 2026 · Self-hosted · On-prem</div>
+  </div>
+</footer>
+
+<script>
+  // close mobile menu on link click
+  document.querySelectorAll('#nav a').forEach(a=>a.addEventListener('click',()=>document.getElementById('nav').classList.remove('open')));
+</script>
+</body>
+</html>
