@@ -1,32 +1,59 @@
-# Sentriage — Marketing Site (Phase 1)
+# AI-Assisted Triage — Website
 
-A single-file, self-contained landing page for the on-prem AI triage product. No
-build step, no dependencies — it's pure HTML/CSS with a few lines of JS.
+The landing page for **AI-Assisted Triage** — an on-prem AI engine that helps
+security teams cut through the noise in their vulnerability-report queue.
 
-> **Overview only.** This page sells the *value and outcomes* (cut the noise,
-> on-prem, data sovereignty). It deliberately reveals **none** of the
-> implementation — no dataset, models, scoring approach, or pipeline.
+## What it does
 
-## View it
-Open `index.html` in any browser (double-click it), or serve locally:
+Security teams aren't drowning in vulnerabilities — they're drowning in *reports*
+about them: duplicates, low-effort submissions, and a rising tide of
+AI-generated noise. AI-Assisted Triage scores every incoming bug-bounty /
+vulnerability-disclosure report in seconds, across seven dimensions:
+
+- **Report quality**
+- **Duplicate risk**
+- **AI-generated likelihood**
+- **Evidence completeness**
+- **Technical accuracy**
+- **Severity**
+- **Suggested CWE**
+
+…each with a short rationale — so analysts triage the real findings first and the
+noise last.
+
+Two principles it's built on:
+
+- 🔒 **Self-hosted.** It runs entirely on your own infrastructure. No report ever
+  leaves your environment. Bring your own model.
+- 🤝 **Recommend, don't decide.** Every score comes with reasoning, and a human
+  always makes the final call.
+
+Built for the teams who *can't* put their reports in someone else's cloud —
+government, defense, financial services, healthcare, and enterprise security
+programs running their own disclosure programs.
+
+## About this repository
+
+This repo contains the **marketing landing page** — a single, self-contained
+static site (`index.html`). No build step, no dependencies, just HTML/CSS with a
+little JavaScript. It presents the product's value only; it contains none of the
+engine, models, datasets, or implementation.
+
+## View locally
+
+Open `index.html` in any browser, or serve it:
 
 ```bash
-cd "Phase 1"
 python -m http.server 8080      # then open http://localhost:8080
 ```
 
-## Deploy it (free options)
-Drag the folder onto **Netlify Drop** (app.netlify.com/drop), or push to a repo
-and enable **GitHub Pages** / **Cloudflare Pages** / **Vercel**. It's a static
-site, so any host works.
+## Deploy
 
-## Before you publish — quick edits
-- **Brand name:** "Sentriage" is a placeholder — find/replace it across
-  `index.html` (logo, `<title>`, footer) with your chosen name.
-- **Contact email:** currently `ranjan12574@gmail.com` in the nav, hero, CTA,
-  and footer `mailto:` links — swap if needed.
-- **Copy:** tune the headlines to taste; nothing here is technical or sensitive.
+It's a static site — host it anywhere:
 
-## Sections
-Hero · Problem · How it works · Why on-prem · Who it's for · Pilot CTA · Footer.
-Fully responsive (desktop + mobile nav).
+- Drag the folder onto **Netlify Drop** (app.netlify.com/drop), or
+- Enable **GitHub Pages**, **Cloudflare Pages**, or **Vercel**.
+
+## Contact
+
+Demos, pilots, and licensing: **ranjan12574@gmail.com**
